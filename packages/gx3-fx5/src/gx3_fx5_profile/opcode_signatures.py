@@ -1707,10 +1707,17 @@ _SOURCE_AUTHORIZED_ROWS: tuple[tuple[OpcodeSignature, str], ...] = (
         ),
         "Pointer",
     ),
+    (
+        OpcodeSignature(
+            "pointer", "Pointer", "", False, ("p",), ("d",), ("I",),
+            "op=m{op=#:as=[as{vt=p}]}",
+        ),
+        "Pointer",
+    ),
     *(
         (OpcodeSignature("coil", marker, "", False, (), (), (),
                          "op=cl{op=#:ct=a}"), marker)
-        for marker in ("FEND", "RET")
+        for marker in ("FEND", "RET", "EI", "DI", "IRET")
     ),
     (
         OpcodeSignature(

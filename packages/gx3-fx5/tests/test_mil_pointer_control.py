@@ -70,6 +70,10 @@ class PointerControlMilTests(unittest.TestCase):
                              (f'{marker}:P:', f'{marker}:I:'),
                              (f'{marker}:P:', f'{marker}:P:M:')):
                 with self.subTest(marker=marker, mutation=new):
+                    if marker == 'Pointer' and new == f'{marker}:I:':
+                        # I declarations are now an independently supported grammar.
+                        self.assertEqual(_decode_mil(data.replace(old, new), 1)[0]['opcode'], 'I255')
+                        continue
                     self.assert_closed(data.replace(old, new))
             self.assert_closed(data.replace(':as=[d{s=#:a=255:vt=nn}]', ''))
             self.assert_closed(data.replace(':as=[d{s=#:a=255:vt=nn}]', ':as=[d{s=#:a=255:vt=nn}:d{s=#:a=256:vt=nn}]'))
