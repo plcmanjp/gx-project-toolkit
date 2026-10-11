@@ -772,7 +772,7 @@ def _mil_float32_operands(record: str, signature: Any) -> list[str]:
 
 
 def _mil_pointer_control(opcode: str, record: str) -> dict[str, Any] | None:
-    """Consume the complete observed P declaration/CALL and FEND/RET grammar.
+    """Consume the complete observed P declaration/CALL/CJ and FEND/RET grammar.
 
     P is not a generic scalar device. Rendering a stored nonnegative ordinal
     neither validates a CPU pointer range nor an executable control-flow graph.
@@ -781,11 +781,11 @@ def _mil_pointer_control(opcode: str, record: str) -> dict[str, Any] | None:
         if record != "mc{op=cl{op=#:ct=a}}":
             raise MiningRequired("record", "MIL control terminator shape is unmined")
         return {"kind": "instruction", "opcode": opcode, "operands": [], "text": None}
-    if opcode not in {"CALL", "Pointer"}:
+    if opcode not in {"CALL", "CJ", "Pointer"}:
         return None
     operation = (
         r"cl\{op=#:ct=a:as=\[as\{vt=p\}\]\}"
-        if opcode == "CALL" else r"m\{op=#:as=\[as\{vt=p\}\]\}"
+        if opcode in {"CALL", "CJ"} else r"m\{op=#:as=\[as\{vt=p\}\]\}"
     )
     match = re.fullmatch(
         r"mc\{op=" + operation + r":as=\[d\{s=#:a=(\d+):vt=nn\}\]\}", record
@@ -794,8 +794,8 @@ def _mil_pointer_control(opcode: str, record: str) -> dict[str, Any] | None:
         raise MiningRequired("record", "MIL pointer control shape is unmined")
     pointer = f"P{int(match.group(1))}"
     return {
-        "kind": "instruction", "opcode": "CALL" if opcode == "CALL" else pointer,
-        "operands": [pointer] if opcode == "CALL" else [], "text": None,
+        "kind": "instruction", "opcode": opcode if opcode in {"CALL", "CJ"} else pointer,
+        "operands": [pointer] if opcode in {"CALL", "CJ"} else [], "text": None,
     }
 
 

@@ -1688,6 +1688,13 @@ _APPROVED_ROWS: tuple[tuple[str, str], ...] = (
 _SOURCE_AUTHORIZED_ROWS: tuple[tuple[OpcodeSignature, str], ...] = (
     (
         OpcodeSignature(
+            "coil", "CJ", "", False, ("p",), ("d",), ("P",),
+            "op=cl{op=#:ct=a:as=[as{vt=p}]}",
+        ),
+        "CJ",
+    ),
+    (
+        OpcodeSignature(
             "coil", "CALL", "", False, ("p",), ("d",), ("P",),
             "op=cl{op=#:ct=a:as=[as{vt=p}]}",
         ),
