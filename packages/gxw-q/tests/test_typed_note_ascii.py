@@ -96,7 +96,7 @@ class TypedAsciiNoteTests(unittest.TestCase):
         length = len(text) + 4
         frame = bytes((length, 0x80, (length + 1) // 2)) + text + bytes((length,))
         for invalid, diagnostic in ((frame[:-1] + b"\x00", False),
-                                    (frame[:2] + b"\x01" + frame[3:], True),
+                                    (frame[:2] + b"\x02" + frame[3:], True),
                                     (frame[:3] + b"\x01" + frame[4:], True)):
             with self.subTest(invalid=invalid.hex()):
                 rows, unknown, _ = reader.pou_rows(b"\x00" * 16 + invalid + LD_M1)
