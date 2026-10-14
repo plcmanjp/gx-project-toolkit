@@ -1123,9 +1123,14 @@ def decode_program(data, *, text_encoding="cp1252"):
     # 단순명령뿐 아니라 비교접점이 첫 rung인 프로젝트도 시작 후보로 인정한다.
     start = 0
     for k in range(len(data) - 5):
+        # A damaged P/I carrier must not make the scanner restart inside its
+        # body or at the next command and lose the unsupported-text diagnostic.
+        if data[k + 1] == 0x81 and data[k] >= 5:
+            start = k
+            break
         # Keep balanced text carriers at the beginning even when their subtype
         # or payload is malformed, so the main loop retains their diagnostics.
-        if (data[k + 1] in (0x80, 0x82) and data[k] >= 5
+        if (data[k + 1] in (0x80, 0x81, 0x82) and data[k] >= 5
                 and k + data[k] <= len(data) and data[k + data[k] - 1] == data[k]):
             start = k
             break
@@ -1200,6 +1205,13 @@ def decode_program(data, *, text_encoding="cp1252"):
     out, i, n = [], 0, len(data)
     while i < n - 2:
         b = data[i]
+        # The separately observed P/I carrier is not a Line Statement or Note.
+        # Retain an unknown diagnostic and skip its whole payload, including
+        # instruction-shaped bytes. No P/I subtype or target support is inferred.
+        if data[i + 1] == 0x81 and b >= 5:
+            out.append(("<i:text:pi>", ""))
+            i += b
+            continue
         buffer_transfer = _decode_buffer_transfer(data, i)
         if buffer_transfer is not None:
             row, i = buffer_transfer
@@ -1608,7 +1620,7 @@ def program_section(data):
         if data[i:i + 4] == b"\x04\x34\x02\x04":
             return data[:i + 4]
         length = data[i]
-        text_frame = (i + 2 < n and data[i + 1] in (0x80, 0x82)
+        text_frame = (i + 2 < n and data[i + 1] in (0x80, 0x81, 0x82)
                       and length >= 5)
         # A separator followed by an operand can also have equal endpoints.
         # Require the descriptor/header shape, rather than endpoint equality.
@@ -1671,11 +1683,11 @@ def typed_statement_records(b, cmap=None, *, text_encoding="cp1252"):
     while offset + 3 < len(section):
         length = section[offset]
         end = offset + length
-        if (section[offset + 1] in (0x80, 0x82) and length >= 5
+        if (section[offset + 1] in (0x80, 0x81, 0x82) and length >= 5
                 and end <= len(section) and section[end - 1] == length):
             # Note text is one carrier, even when printable high-byte text
             # contains a byte sequence shaped like a Statement frame.
-            if section[offset + 1] == 0x82:
+            if section[offset + 1] in (0x81, 0x82):
                 offset = end
                 continue
             subtype_byte = section[offset + 2]
@@ -1728,6 +1740,10 @@ def typed_note_records(b, cmap=None, *, ascii_types=False, framed_types=False,
     while i + 3 < n:
         length = sec0[i]
         subtype_byte = sec0[i + 2]
+        if (sec0[i + 1] in (0x80, 0x81) and length >= 5
+                and i + length <= n and sec0[i + length - 1] == length):
+            i += length
+            continue
         if (
             sec0[i + 1] == 0x82
             and (subtype_byte == (length + 1) // 2 or subtype_byte == 0x01)
