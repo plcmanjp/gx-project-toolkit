@@ -18,3 +18,6 @@ parent workspace, private corpus, customer data, or another Git repository.
 
 The source is a local candidate until installation, conformance and content gates
 are complete. Do not represent candidate code as accepted for field use.
+
+## Cleanup and recovery
+Inventory exact approved targets, Git state and active owners before cleanup. Preserve original projects, credentials, evidence and independent recovery copies. Use only a verified OS recycle/trash operation with permanent-deletion fallback disabled and an actual payload receipt plus restoration verification. If that capability is unavailable, preserve targets and report blocked. Do not bypass a denied operation by changing flags, splitting paths or switching APIs. No parent workspace dependency is introduced.
