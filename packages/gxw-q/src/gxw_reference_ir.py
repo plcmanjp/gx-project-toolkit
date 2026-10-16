@@ -176,7 +176,23 @@ def _role(opcode: str, position: int, operand_count: int) -> tuple[str, str]:
     return "write", "DESTINATION_OPERAND_POSITION"
 
 
+_SOCKET_DUMMY_ARITY = {"SP.SOCOPEN": 4, "SP.SOCCLOSE": 4, "SP.SOCRCV": 5, "SP.SOCSND": 5}
+
+
+def _instruction_operands(opcode: str, tokens: list[str], profile_id: str) -> list[dict[str, Any]]:
+    operands = [parse_operand(token, position) for position, token in enumerate(tokens)]
+    # SH-080811ENG-X sections 7.4.1/2/3/5 define this exact first argument
+    # as a dummy character string. Bare U0 is not a generic device family.
+    if (profile_id == "mitsubishi.gxw.q.ladder" and tokens and tokens[0] == "U0"
+            and len(tokens) == _SOCKET_DUMMY_ARITY.get(opcode)):
+        operands[0].update(kind="literal", status="decoded")
+    return operands
+
+
 def _observed_role(operand: dict[str, Any], opcode: str, operand_count: int) -> tuple[str, str]:
+    if (operand["kind"] == "literal" and operand["raw_token"] == "U0" and operand["position"] == 0
+            and operand_count == _SOCKET_DUMMY_ARITY.get(opcode)):
+        return "read", "SOCKET_DUMMY_LITERAL"
     role, basis = _role(opcode, operand["position"], operand_count)
     if operand["kind"] == "control":
         form = (operand["raw_token"][0], opcode, operand["position"], operand_count)
@@ -275,7 +291,7 @@ def project_rows(pous: list[dict[str, Any]], *, input_sha256: str,
             if opcode in {"__STMT__", "__NOTE__"}:
                 continue
             raw_tokens = split_operands(operand_text) if operand_text else []
-            operands = [parse_operand(token, position) for position, token in enumerate(raw_tokens)]
+            operands = _instruction_operands(opcode, raw_tokens, profile_id)
             total_operands += len(operands)
             if total_operands > MAX_OPERANDS:
                 raise ReferenceIrError("OPERAND_LIMIT")
