@@ -38,6 +38,16 @@ record envelope, attribute, nested key를 검사한 뒤 `NORMAL`과
 프로젝트 완료나 공식 authority를 선언하지 않습니다. Neutral IR과 프로젝트
 reading-scope 판정은 변경하지 않고 일반 HSC schema 지원도 제공하지 않습니다.
 
+별도 `gx3_fx5_profile.cpu_observed.decode_cpu_observed_settings` API는 opaque
+문맥 가드 안에서 관측된 두 CPU 프로그램 이름 형식과 w3pa mirror를 읽습니다.
+제공된 모든 QPG carrier를 목록화하고 유일한 정규 POU link 및 관련 항목을
+검사하며 제한된 POU 이름을 반환합니다. `OBSERVED_SINGLETON_CONTEXT`는 독립
+관측으로 확인한 프로그램/POU 문맥이며 CPU의 숫자 foreign key 해독이 아닙니다.
+unlinked QPG는 위치와 UNKNOWN 사유를 보존합니다. 호출자는 전체 member 목록을
+제공하고 가드 profile과 공식 증거의 출처를 독립 검증해야 합니다. 일반 실행유형
+enum, 실행순서 규칙과 QPG record 크기 의미는 UNKNOWN입니다. Neutral IR을
+변경하거나 프로젝트 판독 완료를 선언하지 않습니다.
+
 CPU identity는 XML 루트 또는 wrapper의 직계 자식 위치에 Config 노드가 정확히
 하나 있어야 합니다. 다중 노드, 동일 중복과 중첩 후보는 탐색 순서와 무관하게
 `AMBIGUOUS`입니다. R은 `Config.xml`과 `!!Config.xml`의 바이트 일치를 요구하고,

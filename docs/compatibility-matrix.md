@@ -38,6 +38,17 @@ Counter-device encoding remains UNKNOWN; the result never declares project
 completion or official authority. This API does not change Neutral IR or the
 project reading-scope decision, and does not provide general HSC schema support.
 
+The separate `gx3_fx5_profile.cpu_observed.decode_cpu_observed_settings` API
+reads two observed CPU program-name forms and their w3pa mirror under opaque
+context guards. It inventories every supplied QPG carrier, validates the sole
+canonical POU link and its related members, and reports the bounded POU name.
+`OBSERVED_SINGLETON_CONTEXT` describes the independently observed program/POU
+context; it is not a decoded numeric CPU foreign key. Unlinked QPG carriers retain
+their locations and UNKNOWN reasons. The caller must provide the complete member
+inventory and independently authenticate the guard profile and official evidence.
+General execution-type enums, execution-order rules and QPG record-size semantics
+remain UNKNOWN. The API neither changes Neutral IR nor declares project completion.
+
 CPU identity requires exactly one Config node, either the XML root or a direct
 child of its wrapper. Multiple nodes, identical duplicates and nested candidates
 are `AMBIGUOUS` regardless of traversal order. R requires matching `Config.xml`
