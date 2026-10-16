@@ -12,6 +12,7 @@ from .schema_validator import SchemaValidationError, validate as validate_agains
 from .signatures import FORM_SIGNATURES
 from .provenance import source_commit
 from .objects import read_objects
+from .lddb import LddbSourceError, decode_empty_mil, mil_is_empty
 
 
 class MiningRequired(ValueError):
@@ -155,13 +156,12 @@ def _block_key(value: object) -> str:
 def _candidate_pairs(archive: SafeGx3Archive, pou: dict[str, Any]) -> list[tuple[str, str]]:
     try:
         step = sqlite_connection(archive.entries[pou["stepinfo"]])
-        block_rows = list(step.execute("SELECT Pos,BlockID FROM T_Block ORDER BY Pos,BlockID"))
+        blocks = {_block_key(row[0]) for row in step.execute("SELECT BlockID FROM T_Block")}
     except Exception:
         return []
     finally:
         if "step" in locals():
             step.close()
-    blocks = {_block_key(row[1]) for row in block_rows}
     candidates: list[tuple[str, str]] = []
     for lddb_name in sorted(name for name in archive.entries if name.endswith("_LDDB.db")):
         mil_name = lddb_name[:-len("_LDDB.db")] + "_MilDB.db"
@@ -169,10 +169,17 @@ def _candidate_pairs(archive: SafeGx3Archive, pou: dict[str, Any]) -> list[tuple
             continue
         try:
             db = sqlite_connection(archive.entries[lddb_name])
-            raw_ids = [_block_key(row[0]) for row in db.execute("SELECT id FROM LadderBlocks")]
-            db.close()
-            ids = set(raw_ids)
-            if ids and ids == blocks and len(raw_ids) == len(ids):
+            ids, valid = set(), True
+            try:
+                for row in db.execute("SELECT id FROM LadderBlocks"):
+                    key = _block_key(row[0])
+                    if key in ids or key not in blocks:
+                        valid = False
+                        break
+                    ids.add(key)
+            finally:
+                db.close()
+            if valid and ids and ids == blocks:
                 candidates.append((lddb_name, mil_name))
         except Exception:
             continue
@@ -181,21 +188,37 @@ def _candidate_pairs(archive: SafeGx3Archive, pou: dict[str, Any]) -> list[tuple
 
 def _decode_pou(archive: SafeGx3Archive, pou: dict[str, Any], candidates: list[tuple[str, str]] | None = None) -> tuple[list[dict[str, Any]], list[dict[str, str]]]:
     findings: list[dict[str, str]] = []
+    if candidates is None:
+        candidates = _candidate_pairs(archive, pou)
+    # Probe one MIL row before materializing any StepInfo/ladder/MIL payloads.
+    # Nonempty MIL retains its existing uncapped decode behavior below.
+    if len(candidates) == 1:
+        lddb_name, mil_name = candidates[0]
+        try:
+            if mil_is_empty(archive, mil_name):
+                records = decode_empty_mil(archive, pou, lddb_name, mil_name)
+                return records, [_finding("MINING_REQUIRED", "record", f"pou:{pou['pou_id']}/{lddb_name}:LadderBlocks",
+                                          "LDDB_SOURCE_ONLY_EMPTY_MIL: bounded source projection; program completeness unverified",
+                                          archive.digest(lddb_name))]
+        except LddbSourceError as error:
+            present = error.source_entry in archive.entries
+            digest = archive.digest(error.source_entry) if present else archive.input_sha256
+            reason = error.code if present else error.code + ": source entry absent; digest_scope=archive"
+            return [], [_finding("MINING_REQUIRED", "record", f"pou:{pou['pou_id']}/{error.locator}",
+                                 reason, digest)]
     try:
         step = sqlite_connection(archive.entries[pou["stepinfo"]])
         block_rows = list(step.execute("SELECT Pos,BlockID FROM T_Block ORDER BY Pos,BlockID"))
         step_rows = list(step.execute("SELECT Pos,BlockID,StepSize FROM T_Step ORDER BY Pos,BlockID"))
     except Exception:
-        return [], [_finding("MINING_REQUIRED", "topology", f"pou:{pou['pou_id']}", "StepInfo table shape is unmined")]
+        return [], [_finding("MINING_REQUIRED", "topology", f"pou:{pou['pou_id']}/{pou['stepinfo']}:T_Block/T_Step", "StepInfo table shape is unmined")]
     finally:
         if 'step' in locals(): step.close()
     blocks = {_block_key(row[1]) for row in block_rows}
     block_keys = [_block_key(row[1]) for row in block_rows]
     step_keys = [_block_key(row[1]) for row in step_rows]
     if len(block_keys) != len(set(block_keys)) or any(key not in blocks for key in step_keys) or not step_rows:
-        return [], [_finding("MINING_REQUIRED", "topology", f"pou:{pou['pou_id']}", "StepInfo block or step relation is duplicate or orphaned")]
-    if candidates is None:
-        candidates = _candidate_pairs(archive, pou)
+        return [], [_finding("MINING_REQUIRED", "topology", f"pou:{pou['pou_id']}/{pou['stepinfo']}:T_Block/T_Step", "StepInfo block or step relation is duplicate or orphaned")]
     if len(candidates) != 1:
         return [], [_finding("MINING_REQUIRED", "topology", f"pou:{pou['pou_id']}", "LDDB/MilDB relation is absent or ambiguous")]
     lddb_name, mil_name = candidates[0]
