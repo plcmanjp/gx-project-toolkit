@@ -28,6 +28,16 @@ FX5 detector의 정확한 tuple은 `(FX5U, 528)`, `(FX5UJ, 529)`, `(FX5S, 530)`�
 FX5UC는 별도 identity를 추측하지 않고 검증된 FX5U tuple을 공유하는 범위로 제한합니다.
 tuple 일치만으로 전체 프로젝트의 완전 해독이나 target 변환을 승인하지 않습니다.
 
+별도 `gx3_fx5_profile.hsc_observed.decode_hsc_observed_settings` API는 문맥을
+검증한 Normal/전체 채널 Not Use 관측형만 반환합니다. 호출자는 UNIT 항목과
+순서가 있는 record 가드의 버전별 profile을 제공하고 그 출처를 독립 검증해야
+합니다. profile은 의미 이름이나 mapping을 지정할 수 없습니다. 고정 코드는
+record envelope, attribute, nested key를 검사한 뒤 `NORMAL`과
+`ALL_NOT_USE_OBSERVED_VECTOR`를 반환합니다. 다른 값, 손상 바이트와 문맥
+불일치는 위치를 포함한 미지원으로 남깁니다. counter-device encoding은 UNKNOWN이며
+프로젝트 완료나 공식 authority를 선언하지 않습니다. Neutral IR과 프로젝트
+reading-scope 판정은 변경하지 않고 일반 HSC schema 지원도 제공하지 않습니다.
+
 CPU identity는 XML 루트 또는 wrapper의 직계 자식 위치에 Config 노드가 정확히
 하나 있어야 합니다. 다중 노드, 동일 중복과 중첩 후보는 탐색 순서와 무관하게
 `AMBIGUOUS`입니다. R은 `Config.xml`과 `!!Config.xml`의 바이트 일치를 요구하고,

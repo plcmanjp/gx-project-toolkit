@@ -27,6 +27,17 @@ The exact FX5 detector tuples are `(FX5U, 528)`, `(FX5UJ, 529)`, and
 a separate identity is not inferred. A matching tuple does not establish complete
 decoding of a project or approval for target conversion.
 
+The separate `gx3_fx5_profile.hsc_observed.decode_hsc_observed_settings` API
+projects only the guarded Normal/all-channels-Not-Use observed form. The caller
+supplies a versioned profile of UNIT member and ordered record guards and must
+independently verify that profile's provenance. The profile cannot supply semantic
+labels or mappings. Fixed code checks record envelopes, attributes and nested
+keys before returning `NORMAL` and `ALL_NOT_USE_OBSERVED_VECTOR`. Other values,
+malformed bytes and context mismatches remain unsupported with locations.
+Counter-device encoding remains UNKNOWN; the result never declares project
+completion or official authority. This API does not change Neutral IR or the
+project reading-scope decision, and does not provide general HSC schema support.
+
 CPU identity requires exactly one Config node, either the XML root or a direct
 child of its wrapper. Multiple nodes, identical duplicates and nested candidates
 are `AMBIGUOUS` regardless of traversal order. R requires matching `Config.xml`
