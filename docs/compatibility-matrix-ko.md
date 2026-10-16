@@ -19,6 +19,11 @@ Unit/UnitId 조합이 명시되면 `UNSUPPORTED`, 기종 식별 근거가 없거
 현재 호환성 보장이 아닙니다. [프로젝트 방향](../README-ko.md#프로젝트-방향)을
 참고하세요.
 
+R 객체 읽기는 관측된 디바이스 코멘트의 식별자/문자열과 local label의 이름/Comment를
+기존 IR로 출력합니다. carrier 소유 관계, 라벨 자료형/주소와 POU 연결은 미해독이므로
+PARTIAL을 유지합니다. 미지원 행은 opaque 식별자와 finding으로 보존합니다.
+자세한 범위는 [R 객체 읽기 경계](r-object-reading.md)를 따릅니다.
+
 FX5 detector의 정확한 tuple은 `(FX5U, 528)`, `(FX5UJ, 529)`, `(FX5S, 530)`입니다.
 FX5UC는 별도 identity를 추측하지 않고 검증된 FX5U tuple을 공유하는 범위로 제한합니다.
 tuple 일치만으로 전체 프로젝트의 완전 해독이나 target 변환을 승인하지 않습니다.

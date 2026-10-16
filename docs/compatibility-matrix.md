@@ -17,6 +17,11 @@ The current profile identifier remains `mitsubishi.gx3.r04cpu.ladder`.
 Broader iQ-R coverage is a development direction, not a current compatibility
 guarantee. See [project direction](../README.md#project-direction).
 
+R object reading projects observed device-comment identities/text and local-label
+names/Comment into the existing IR. These remain PARTIAL; carrier ownership,
+label type/address and POU binding are not decoded. Unsupported rows retain
+opaque identities and findings. See [R object boundaries](r-object-reading.md).
+
 The exact FX5 detector tuples are `(FX5U, 528)`, `(FX5UJ, 529)`, and
 `(FX5S, 530)`. FX5UC is limited to the validated scope sharing the FX5U tuple;
 a separate identity is not inferred. A matching tuple does not establish complete

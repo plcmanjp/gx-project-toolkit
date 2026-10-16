@@ -11,6 +11,7 @@ from .archive import ArchiveError, SafeGx3Archive, sha256_file, sqlite_connectio
 from .schema_validator import SchemaValidationError, validate as validate_against_schema
 from .signatures import FORM_SIGNATURES
 from .provenance import source_commit
+from .objects import read_objects
 
 
 class MiningRequired(ValueError):
@@ -50,8 +51,11 @@ def parse(source) -> dict[str, Any]:
             records, local_findings = _decode_pou(archive, item, candidate_pairs[item["pou_id"]])
         pous.append({**item, "records": records})
         findings.extend(local_findings)
-    comments, comment_findings, comment_coverage = _carrier_census(archive, "comment")
-    labels, label_findings, label_coverage = _carrier_census(archive, "label")
+    try:
+        comments, comment_findings, comment_coverage = _carrier_census(archive, "comment")
+        labels, label_findings, label_coverage = _carrier_census(archive, "label")
+    except ArchiveError as error:
+        return _fatal(archive.input_sha256, str(error))
     findings.extend(comment_findings + label_findings)
     after = sha256_file(source)
     if archive.input_sha256 != after:
@@ -332,28 +336,7 @@ def _finding(code: str, object_kind: str, locator: str, reason: str, digest: str
 
 
 def _carrier_census(archive: SafeGx3Archive, kind: str) -> tuple[list[dict[str, Any]], list[dict[str, str]], dict[str, int]]:
-    names = sorted(name for name in archive.entries if (name.endswith("_DC.db") if kind == "comment" else name == "LabelData.db"))
-    findings: list[dict[str, str]] = []
-    items: list[dict[str, Any]] = []
-    total = 0
-    for name in names:
-        try:
-            database = sqlite_connection(archive.entries[name])
-            table = "COMMENT_DATA" if kind == "comment" else "LabelTbl"
-            count = int(database.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0])
-            total += count
-            database.close()
-            findings.append(_finding("MINING_REQUIRED", kind, f"{name}:{table}", "Phase 4 carrier census only; row layout is unmined", archive.digest(name)))
-            provenance = _provenance(name, table, f"{name}:{table}", archive.digest(name), len(archive.entries[name]))
-            for index in range(count):
-                identifier = f"MINING_REQUIRED_{archive.digest(name)[:16]}_{index:08d}"
-                common = {"scope": "common_device" if kind == "comment" else "global_label", "program_id": None, "language_slot": "unknown", "value_state": "OBJECT_ABSENT", "value": None, "provenance": provenance}
-                items.append({**common, "device_id" if kind == "comment" else "label_id": identifier})
-        except Exception:
-            findings.append(_finding("MINING_REQUIRED", kind, name, "carrier schema is unmined", archive.digest(name)))
-    if not names:
-        findings.append(_finding("MINING_REQUIRED", kind, "project", "carrier absent or unmined"))
-    return items, findings, {"total": total, "decoded": 0, "partial": 0, "unknown": total}
+    return read_objects(archive, kind)
 
 
 def _envelope(archive: SafeGx3Archive, profile: dict[str, Any], raw_pous: list[dict[str, Any]], comments: list[dict[str, Any]], labels: list[dict[str, Any]], findings: list[dict[str, str]], comment_coverage: dict[str, int], label_coverage: dict[str, int]) -> dict[str, Any]:

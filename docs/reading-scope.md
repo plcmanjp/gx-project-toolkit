@@ -10,6 +10,10 @@ The report is always PARTIAL and never certifies complete project reading.
 It does not change parser IR, infer settings from hashes, or execute engineering
 software. Archive binding remains the caller's responsibility.
 
+The R parser's [bounded object projection](r-object-reading.md) preserves known
+comment/label identity and text while retaining PARTIAL coverage for unbound
+ownership and other attributes. This does not make a project reading complete.
+
 The Q GXW Reference IR recognizes the first bare `U0` token as a literal only in
 the exact `SP.SOCOPEN`/`SP.SOCCLOSE` four-operand and `SP.SOCRCV`/`SP.SOCSND`
 five-operand forms. This follows the dummy string definition in the manufacturer's
