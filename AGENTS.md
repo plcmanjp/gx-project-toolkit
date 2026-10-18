@@ -8,6 +8,13 @@ parent workspace, private corpus, customer data, or another Git repository.
 - Preserve parser meaning, binary constants, schema bytes and fail-closed checks.
 - Never connect to a PLC or launch engineering software without explicit approval.
 - Work only on disposable input copies; do not overwrite original projects.
+- Put agent scratch and synthetic harness inputs in the current OS user's Temp,
+  outside this checkout and OneDrive, with a repository-specific unique run.
+  Verify the actual path before writing; do not change global TEMP/TMP or import
+  a parent helper. Preserve scratch after normal exit and failure. Keep unique
+  failure evidence, approved originals and unfinished work in an appropriate
+  retained location as well; Temp must not be their only copy. Product build
+  contracts remain package-owned. Do not add automatic cleanup to this workflow.
 - Keep synthetic tests separate from private authority and field acceptance.
 - Do not add proprietary projects, exports, screenshots, manuals or credentials.
 - Inspect diffs and run relevant tests before committing. Never force push.
