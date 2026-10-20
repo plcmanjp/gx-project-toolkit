@@ -93,6 +93,16 @@ The Python APIs retain their `text_encoding` keyword. Note subtype options remai
 Python-only; request the extended view with
 `typed_note_records(..., text_encoding="cp949", framed_types=True)`.
 
+`typed_statement_records(..., text_encoding="auto")` keeps the exact body,
+raw storage byte, In PLC/Peripheral type and stored step width separate from
+the compatibility CSV marker. Literal leading stars remain part of the body.
+Unknown types or unmatched source rows refuse typed promotion. FX5 Statement
+provenance adds `statement_raw_st` and an exact UTF-8 body digest to the existing
+relation evidence; the Neutral IR schema and compatibility text stay unchanged.
+Decimal F device-comment keys are decoded under the existing non-extended,
+non-indexed key restrictions. These source-format observations do not establish
+target import, runtime device behavior or field acceptance.
+
 Reference IR `COMPLETE` describes decoded syntax and classified operand access;
 it does not establish a complete physical address range or official validation.
 Unknown or malformed instructions prevent `COMPLETE` even without operands.

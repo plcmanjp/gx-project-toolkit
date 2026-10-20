@@ -87,6 +87,15 @@ Python API는 `text_encoding` 키워드를 유지합니다. Note 타입 옵션�
 제공하며 확장된 정보는
 `typed_note_records(..., text_encoding="cp949", framed_types=True)`로 별도 요청합니다.
 
+`typed_statement_records(..., text_encoding="auto")`는 정확한 본문, 원시 저장
+바이트, In PLC/Peripheral 유형과 저장 step 폭을 호환 CSV 표식과 구분합니다.
+본문 첫 글자의 별표는 그대로 보존합니다. 알 수 없는 유형이나 대응하지 않는
+소스 행은 typed 변환을 거부합니다. FX5 Statement provenance는 기존 relation
+evidence에 `statement_raw_st`와 정확한 UTF-8 본문 digest를 추가하며 Neutral IR
+schema와 호환 텍스트는 유지합니다. 10진수 F 디바이스 코멘트 키는 기존의 확장
+및 인덱스 없는 키 제한에서 해독합니다. 이 저장 형식 관측은 대상 가져오기,
+실행 중 디바이스 동작이나 현장 수락을 입증하지 않습니다.
+
 Reference IR의 `COMPLETE`는 문법 해석과 피연산자 접근 분류를 뜻하며, 전체 물리
 주소 범위의 확정이나 공식 검증을 뜻하지 않습니다. 미확인 또는 손상된 명령은
 피연산자가 없어도 `COMPLETE`를 막습니다. reader 진단은 추가 필드 `diagnostics`에

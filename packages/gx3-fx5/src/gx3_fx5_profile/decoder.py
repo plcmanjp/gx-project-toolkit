@@ -820,6 +820,8 @@ def _decode_mil(data: str, expected_count: int) -> list[dict[str, Any]]:
                 "opcode": None,
                 "operands": [],
                 "text": ("*" if match.group(2) == "s" else "") + match.group(1),
+                "statement_raw_st": match.group(2),
+                "statement_body": match.group(1),
             }
         ]
     serialized = _balanced_records(data, "mc{")
@@ -1997,6 +1999,8 @@ def _decode_lddb(data: str, blocktype: int, expected_count: int) -> list[dict[st
                 "opcode": None,
                 "operands": [],
                 "text": ("*" if match.group(3) == "s" else "") + match.group(2),
+                "statement_raw_st": match.group(3),
+                "statement_body": match.group(2),
             }
         ]
     if blocktype == 5:
@@ -2386,6 +2390,20 @@ def decode_records(
                 base_id = f"{block}:{local_index}"
                 tokens = item["operands"]
                 item_provenance = provenance
+                if item["kind"] == "statement":
+                    raw_st = item.get("statement_raw_st")
+                    body = item.get("statement_body")
+                    if (raw_st not in {"i", "s"} or not isinstance(body, str)
+                            or item["text"] != ("*" if raw_st == "s" else "") + body):
+                        raise MiningRequired("record", "Statement raw type/body binding is unmined")
+                    item_provenance = {
+                        **provenance,
+                        "relation_evidence": [
+                            *provenance["relation_evidence"],
+                            f"statement_raw_st={raw_st}",
+                            "statement_body_sha256=" + hashlib.sha256(body.encode("utf-8")).hexdigest(),
+                        ],
+                    }
                 if item["kind"] == "note":
                     subtype = item.get("note_subtype")
                     if subtype not in {"i", "s"}:
@@ -2521,6 +2539,7 @@ def _device_id(row: tuple[Any, ...]) -> str | None:
         1: "M",
         2: "SM",
         3: "L",
+        4: "F",
         32: "D",
         33: "SD",
         39: "R",

@@ -1123,9 +1123,14 @@ def decode_program(data, *, text_encoding="cp1252"):
     # 단순명령뿐 아니라 비교접점이 첫 rung인 프로젝트도 시작 후보로 인정한다.
     start = 0
     for k in range(len(data) - 5):
+        # A damaged P/I carrier must not make the scanner restart inside its
+        # body or at the next command and lose the unsupported-text diagnostic.
+        if data[k + 1] == 0x81 and data[k] >= 5:
+            start = k
+            break
         # Keep balanced text carriers at the beginning even when their subtype
         # or payload is malformed, so the main loop retains their diagnostics.
-        if (data[k + 1] in (0x80, 0x82) and data[k] >= 5
+        if (data[k + 1] in (0x80, 0x81, 0x82) and data[k] >= 5
                 and k + data[k] <= len(data) and data[k + data[k] - 1] == data[k]):
             start = k
             break
@@ -1189,7 +1194,8 @@ def decode_program(data, *, text_encoding="cp1252"):
             start = k
             break
         # A complete leading Statement frame need not begin with a title bracket.
-        if data[k + 1] == 0x80 and 5 <= data[k] and data[k + 2] == (data[k] + 1) // 2:
+        if (data[k + 1] == 0x80 and 5 <= data[k]
+                and data[k + 2] in (1, (data[k] + 1) // 2)):
             L = data[k]
             if (k + 3 + (L - 4) < len(data) and data[k + 3 + (L - 4)] == L
                     and all(0x20 <= c <= 0xff for c in data[k + 3:k + 3 + (L - 4)])):
@@ -1199,6 +1205,13 @@ def decode_program(data, *, text_encoding="cp1252"):
     out, i, n = [], 0, len(data)
     while i < n - 2:
         b = data[i]
+        # The separately observed P/I carrier is not a Line Statement or Note.
+        # Retain an unknown diagnostic and skip its whole payload, including
+        # instruction-shaped bytes. No P/I subtype or target support is inferred.
+        if data[i + 1] == 0x81 and b >= 5:
+            out.append(("<i:text:pi>", ""))
+            i += b
+            continue
         buffer_transfer = _decode_buffer_transfer(data, i)
         if buffer_transfer is not None:
             row, i = buffer_transfer
@@ -1214,7 +1227,7 @@ def decode_program(data, *, text_encoding="cp1252"):
         if (i + 2 < n and data[i + 1] in (0x80, 0x82) and b >= 5
                 and i + b <= n and data[i + b - 1] == b
                 and data[i + 2] != (b + 1) // 2
-                and not (data[i + 1] == 0x82 and data[i + 2] == 1)):
+                and data[i + 2] != 1):
             kind = "statement" if data[i + 1] == 0x80 else "note"
             out.append((f"<i:text:{kind}>", ""))
             i += b
@@ -1223,13 +1236,16 @@ def decode_program(data, *, text_encoding="cp1252"):
         # 닫기 바이트(=L) + 80 마커가 false match 차단. 텍스트는 cp1252(em dash 0x97 등).
         # Source-derived parser observation.
         if (i + 3 < n and data[i + 1] == 0x80
-                and data[i + 2] == (data[i] + 1) // 2):
+                and data[i + 2] in (1, (data[i] + 1) // 2)):
             L = data[i]
             tl = L - 4
             if 5 <= L and 1 <= tl and i + 3 + tl < n and data[i + 3 + tl] == L:
                 txt = data[i + 3:i + 3 + tl]
                 if all(0x20 <= c <= 0xff for c in txt):
-                    out.append(("__STMT__", _decode_pou_text(txt, text_encoding)))
+                    body = _decode_pou_text(txt, text_encoding)
+                    # The CSV storage marker is separate from a literal first
+                    # star in the body. Typed consumers must use the raw view.
+                    out.append(("__STMT__", ("*" if data[i + 2] == 1 else "") + body))
                     i += 3 + tl + 1
                     continue
                 out.append(("<i:text:statement>", ""))
@@ -1604,7 +1620,7 @@ def program_section(data):
         if data[i:i + 4] == b"\x04\x34\x02\x04":
             return data[:i + 4]
         length = data[i]
-        text_frame = (i + 2 < n and data[i + 1] in (0x80, 0x82)
+        text_frame = (i + 2 < n and data[i + 1] in (0x80, 0x81, 0x82)
                       and length >= 5)
         # A separator followed by an operand can also have equal endpoints.
         # Require the descriptor/header shape, rather than endpoint equality.
@@ -1653,6 +1669,57 @@ def pou_rows(b, cmap=None, *, text_encoding="cp1252"):
     return rows, unk_i, unk_d
 
 
+def typed_statement_records(b, cmap=None, *, text_encoding="cp1252"):
+    """Bind exact source bodies and raw storage types to compatibility rows.
+
+    Raw 01 is Peripheral; the separately observed length-related byte is
+    In PLC. This is a source-format view, not target CPU or PLC acceptance.
+    A source body beginning with '*' is never stripped or reinterpreted.
+    Unknown types, damaged carriers and unpaired text refuse typed promotion.
+    """
+    section = program_section(b)
+    raw = []
+    offset = 0
+    while offset + 3 < len(section):
+        length = section[offset]
+        end = offset + length
+        if (section[offset + 1] in (0x80, 0x81, 0x82) and length >= 5
+                and end <= len(section) and section[end - 1] == length):
+            # Note text is one carrier, even when printable high-byte text
+            # contains a byte sequence shaped like a Statement frame.
+            if section[offset + 1] in (0x81, 0x82):
+                offset = end
+                continue
+            subtype_byte = section[offset + 2]
+            payload = section[offset + 3:end - 1]
+            if not all(0x20 <= value <= 0xff for value in payload):
+                raise ValueError("Statement text carrier contains unsupported bytes")
+            if subtype_byte == 1:
+                subtype = "s"
+            elif subtype_byte == (length + 1) // 2:
+                subtype = "i"
+            else:
+                raise ValueError("Statement storage type is unknown")
+            body = _decode_pou_text(payload, text_encoding)
+            raw.append({"text": body, "encoded_length": len(payload), "raw_text_hex": payload.hex(),
+                        "raw_type": f"0x{subtype_byte:02x}", "subtype": subtype,
+                        "source_step_width": subtype_byte, "offset": offset})
+            offset = end
+            continue
+        offset += 1
+    rows, _, _ = pou_rows(b, cmap, text_encoding=text_encoding)
+    indexes = [i for i, row in enumerate(rows) if row[0] == "__STMT__"]
+    if len(raw) != len(indexes):
+        raise ValueError("typed Statement frame count does not match decoded Statement row count")
+    result = []
+    for item, index in zip(raw, indexes):
+        expected = ("*" if item["subtype"] == "s" else "") + item["text"]
+        if rows[index][1] != expected:
+            raise ValueError("typed Statement frame body/type differs from decoded Statement row")
+        result.append({**item, "row_index": index})
+    return result
+
+
 def typed_note_records(b, cmap=None, *, ascii_types=False, framed_types=False,
                        text_encoding="cp1252"):
     """Return observed Note records with raw subtype and preceding instruction.
@@ -1673,6 +1740,10 @@ def typed_note_records(b, cmap=None, *, ascii_types=False, framed_types=False,
     while i + 3 < n:
         length = sec0[i]
         subtype_byte = sec0[i + 2]
+        if (sec0[i + 1] in (0x80, 0x81) and length >= 5
+                and i + length <= n and sec0[i + length - 1] == length):
+            i += length
+            continue
         if (
             sec0[i + 1] == 0x82
             and (subtype_byte == (length + 1) // 2 or subtype_byte == 0x01)
