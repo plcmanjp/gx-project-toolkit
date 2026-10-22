@@ -4,7 +4,7 @@
 
 | Package | Specified scope | Outside scope |
 |---|---|---|
-| gx3-fx5-parser-toolkit 0.4.0 | Validated FX5-family GX3 carriers and Neutral IR 1.0.0 | Claims of support for all FX instructions or languages |
+| gx3-fx5-parser-toolkit 0.4.1 | Validated FX5-family GX3 carriers and Neutral IR 1.0.0 | Claims of support for all FX instructions or languages |
 | gx3-r-parser-toolkit 0.2.0 | Current explicit supported profile: R04CPU Ladder with `R04/4097` | Current support claims for other iQ-R CPUs or unvalidated project formats |
 | gxw-parser-toolkit 0.1.0 | Existing Q-series GXW reading and bounded candidate writer/encoder | Guaranteed official saving or execution for every CPU/instruction |
 | gx-re-lab 0.1.0 | Research queries, comparison, census, and planning for fixed inputs | Official lifecycle collection and product acceptance |

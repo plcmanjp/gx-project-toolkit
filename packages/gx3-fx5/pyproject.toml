@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gx3-fx5-parser-toolkit"
-version = "0.4.0"
+version = "0.4.1"
 description = "Read-only GX3 safe archive and FX5 structural topology inspector"
 requires-python = ">=3.12"
 license = "Apache-2.0"

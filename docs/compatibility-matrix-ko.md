@@ -6,7 +6,7 @@
 
 | 패키지 | 명시한 범위 | 범위 밖 |
 |---|---|---|
-| gx3-fx5-parser-toolkit 0.4.0 | 검증된 FX5-family GX3 carrier와 Neutral IR 1.0.0 | 모든 FX 명령이나 언어 지원 주장 |
+| gx3-fx5-parser-toolkit 0.4.1 | 검증된 FX5-family GX3 carrier와 Neutral IR 1.0.0 | 모든 FX 명령이나 언어 지원 주장 |
 | gx3-r-parser-toolkit 0.2.0 | 현재 명시적 지원 프로필: `R04/4097`의 R04CPU Ladder | 다른 iQ-R CPU 또는 미검증 프로젝트 형식의 현재 지원 주장 |
 | gxw-parser-toolkit 0.1.0 | 기존 Q 계열 GXW 판독과 제한된 후보 writer/encoder | 모든 CPU/명령의 공식 저장 및 실행 보증 |
 | gx-re-lab 0.1.0 | 고정 입력의 연구 조회, 비교, census, 계획 | 공식 lifecycle 수집과 제품 수락 |

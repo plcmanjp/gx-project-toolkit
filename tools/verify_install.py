@@ -11,7 +11,7 @@ import subprocess
 import sys
 import tempfile
 
-VERSIONS = {"gx3-fx5-parser-toolkit": "0.4.0", "gx3-r-parser-toolkit": "0.2.0",
+VERSIONS = {"gx3-fx5-parser-toolkit": "0.4.1", "gx3-r-parser-toolkit": "0.2.0",
             "gxw-parser-toolkit": "0.1.0", "gx-re-lab": "0.1.0"}
 SCHEMAS = {"gx3_fx5_parser_toolkit": "b42b578be8b10190c4a7e8ff7dc52dda05b1e30cd1a21a03b16b92a51eb4f6ed",
            "gx3_r_parser_toolkit": "26ac430cef74466116d2607e8136feb648b7ebef222ace22dc6798fb529c095f"}
