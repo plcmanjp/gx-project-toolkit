@@ -346,6 +346,35 @@ def _format_source_authorized_operand(
     vts = signature.operand_vts
     kinds = signature.operand_kinds
     all_tags = signature.header_operand_tags
+    # Same-carrier ladder witnesses establish these exact scalar contexts.
+    # DX is hexadecimal, SD decimal. Neither tag becomes a generic scalar.
+    if shape == "scalar" and len(numbers) == 1 and numbers[0] >= 0:
+        dx_contact = (
+            signature.form == "logic" and marker == "B"
+            and logic_type in {"a", "o"} and not signature.pulse
+            and vts == ("Abl",) and kinds == ("d",) and all_tags == ("DX",)
+            and operand_index == 0 and tags[:1] == ["DX"]
+            and signature.inner_op == f"op=lct{{op=#:lt={logic_type}:ct=a:as=[as{{vt=Abl}}]}}"
+        )
+        sd_move = (
+            signature.form == "coil" and marker == "MOV" and logic_type == ""
+            and not signature.pulse and vts in {("A16", "A16"), ("A32", "A32")}
+            and kinds == ("d", "d") and all_tags in {("D", "SD"), ("SD", "D")}
+            and signature.inner_op == "op=cl{op=#:ct=a:as=["
+            + ":".join(f"as{{vt={vt}}}" for vt in vts) + "]}"
+        )
+        sd_comparison = (
+            signature.form == "logic" and marker == "EQ" and logic_type in {"l", "a"}
+            and not signature.pulse and vts == ("A32s", "A32s")
+            and kinds == ("d", "d") and all_tags == ("SD", "D")
+            and signature.inner_op == f"op=lct{{op=#:lt={logic_type}:ct=a:as=[as{{vt=A32s}}:as{{vt=A32s}}]}}"
+        )
+        if dx_contact or ((sd_move or sd_comparison) and tags[:1] == ["SD"] and operand_index == all_tags.index("SD")):
+            raw = "mc{" + signature.inner_op + ":as=["
+            pattern = re.escape(raw) + ":".join([r"d\{s=#:a=\d+:vt=nn\}"] * len(kinds)) + r"\]\}"
+            if re.fullmatch(pattern, record) is None:
+                raise MiningRequired("operand", "MIL DX/SD scalar serialization is unobserved")
+            return (f"DX{numbers[0]:X}" if dx_contact else f"SD{numbers[0]}"), 1
     # Nesting is an MC/MCR operand, not a generally admitted scalar device.
     # Only the complete observed signatures and raw operand shapes authorize it.
     mc_form = (
@@ -892,6 +921,16 @@ def _decode_mil(data: str, expected_count: int) -> list[dict[str, Any]]:
             ) from error
         operands: list[str] = []
         signature = oracle_signatures[record_index]
+        if opcode in {"DPLSV", "DDSZR", "DDRVA"}:
+            operands_pattern = ":".join(
+                r"d\{s=#:a=\d+:vt=nn\}" if kind == "d"
+                else r"c\{s=#:v=\d+:si=s\}"
+                for kind in signature.operand_kinds
+            )
+            if re.fullmatch(
+                re.escape("mc{" + signature.inner_op + ":as=[") + operands_pattern + r"\]\}", record
+            ) is None:
+                raise MiningRequired("operand", "MIL positioning scalar serialization is unobserved")
         pointer_tag = signature.header_operand_tags[0] if opcode == "Pointer" else "P"
         control = _mil_pointer_control(opcode, record, pointer_tag)
         if control is not None:

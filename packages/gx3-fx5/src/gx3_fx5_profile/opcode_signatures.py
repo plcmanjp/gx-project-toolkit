@@ -247,6 +247,22 @@ def structural_mnemonic(signature: OpcodeSignature) -> str:
     a downstream decision; recognizing IVCK/IVDR/RS2 here does not approve a Q
     implementation.
     """
+    positioning_forms = {
+        ("PLSV", ("A32", "Aea", "Abl"), ("d", "d", "d"), ("D", "Y", "Y")): "DPLSV",
+        ("DSZR", ("A32", "A32", "Aea", "Abl"), ("d", "d", "c", "d"), ("D", "D", "K_1", "M")): "DDSZR",
+        ("DRVA", ("A32", "A32", "Aea", "Abl"), ("d", "d", "c", "d"), ("D", "D", "K_1", "M")): "DDRVA",
+    }
+    positioning = positioning_forms.get((
+        signature.header_marker, signature.operand_vts,
+        signature.operand_kinds, signature.header_operand_tags,
+    ))
+    if (
+        positioning is not None and signature.form == "coil"
+        and signature.logic_type == "" and not signature.pulse
+        and signature.inner_op == "op=cl{op=#:ct=a:as=["
+        + ":".join(f"as{{vt={vt}}}" for vt in signature.operand_vts) + "]}"
+    ):
+        return positioning
     if signature.form == "logic" and not signature.pulse:
         expected = (
             "op=lct{op=#:lt="

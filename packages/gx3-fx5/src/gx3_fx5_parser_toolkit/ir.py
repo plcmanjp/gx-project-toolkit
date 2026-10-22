@@ -18,7 +18,7 @@ from gx3_fx5_profile.decoder import (
 )
 
 PACKAGE = "gx3-fx5-parser-toolkit"
-VERSION = "0.4.0"
+VERSION = "0.4.1"
 
 
 def _source_commit() -> str:
