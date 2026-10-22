@@ -33,7 +33,7 @@ Python 3.12 이상이 필요합니다. 전체 작성 기능은 Windows와 pywin3
 Ladder입니다. 다른 CPU 조합이 명시된 경우에는 `UNSUPPORTED`, 기종 식별 근거가
 없거나 모호한 경우에는 `AMBIGUOUS`로 판정합니다. iQ-R 범위 확장에는 추가할 CPU와
 프로젝트 형식별 근거, 명시적인 프로필 처리 및 회귀 검증이 필요합니다. 이 방향성이
-다른 iQ-R CPU의 현재 지원이나 PLC 운전·현장 적용 승인을 의미하지는 않습니다.
+다른 iQ-R CPU의 현재 지원이나 PLC 운전과 현장 적용 승인을 의미하지는 않습니다.
 현재 경계는 [호환성 표](docs/compatibility-matrix-ko.md)를 확인하세요.
 
 ## 빌드와 설치
