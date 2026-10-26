@@ -188,6 +188,16 @@ during preparation and before publication; they do not provide a filesystem lock
 Numeric checks reject frame overflow while preserving valid negative two's
 complement encodings. Frame width is not a CPU device or operand support claim.
 
+`gxw_parameter_records` is an experimental, in-memory `Param.wpa` stream codec.
+It round-trips ordered opaque records with bounded even-length framing and a
+final `FFFF` terminator. Its narrow name helper reads printable ASCII Label and
+Comment fields and replaces only a zero-to-eight-character alphanumeric or
+underscore Label. Other records remain unchanged. Envelope checks do not identify
+a CPU. The caller must establish the project profile independently. This API does
+not write GXW containers, update their history metadata, decode other parameter
+semantics, or establish native/PLC acceptance. No project-edit MCP is exposed by
+this module.
+
 ## Validation and publication boundaries
 
 `tools/audit_public_tree.py` checks paths, file types, and selected sensitive
