@@ -64,7 +64,8 @@ def git_environment():
 
 
 def git(root, *args):
-    result = subprocess.run(["git", "--no-optional-locks", "-C", str(root), *args],
+    result = subprocess.run(["git", "--no-optional-locks", "-c", "core.fsmonitor=false",
+                             "-c", "core.untrackedCache=false", "-C", str(root), *args],
                             env=git_environment(), capture_output=True, timeout=120)
     require(result.returncode == 0, "독립 Git 체크아웃의 커밋 정보를 읽지 못했습니다.")
     return result.stdout

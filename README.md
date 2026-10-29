@@ -40,33 +40,22 @@ direction does not claim that other iQ-R CPUs are supported today or authorize
 PLC operation or field deployment. See the
 [compatibility matrix](docs/compatibility-matrix.md) for current boundaries.
 
-## Build and install
+## GXW 프리뷰 빌드와 설치
 
-Build from a reviewed, committed, clean standalone checkout. The output directory
-must be a new path outside the checkout. Run commands from the repository root
-with Git available on PATH. Installation verification requires an isolated
-virtual environment without `PYTHONPATH`; the report path must not already exist.
-The following example uses PowerShell.
+현재 `gxw-parser-toolkit 0.2.0a1`은 아래 개별 빌드와 독립 설치 검증을 사용합니다. 기존 `lab`의 GXW `0.1.0` 소비 pin과 다른 패키지 버전은 보존합니다. 새 GXW wheel과 이전 통합 환경을 함께 설치하거나 기존 `verify_install.py` 기본 profile로 검사하지 않습니다. FX5/R의 독립 설치 profile은 기존 계약을 유지합니다.
+
+커밋한 깨끗한 독립 checkout에서 Windows CPython 3.13으로 실행합니다. 출력 경로는 checkout 밖의 새 경로여야 합니다. 아래 의존성 다운로드에는 네트워크가 필요하고 실제 검증기는 준비된 wheelhouse만 사용합니다.
 
 ```powershell
-python -m venv C:\Temp\gx-build-env
-C:\Temp\gx-build-env\Scripts\python.exe -m pip install --require-hashes -r requirements-build.txt
-C:\Temp\gx-build-env\Scripts\python.exe tools/build_artifacts.py --output C:\Temp\gx-build-01
-$wheels = Get-ChildItem C:\Temp\gx-build-01\artifacts -Recurse -Filter *.whl
-C:\Temp\gx-build-env\Scripts\python.exe -m pip install $wheels.FullName
-C:\Temp\gx-build-env\Scripts\python.exe -m pip check
-$commit = git rev-parse HEAD
-$tree = git rev-parse 'HEAD^{tree}'
-C:\Temp\gx-build-env\Scripts\python.exe tools/verify_install.py --commit $commit --tree $tree --output C:\Temp\gx-install-report.json
+py -3.13 -m venv C:\Temp\gxw-build-env
+$gxwPython = 'C:\Temp\gxw-build-env\Scripts\python.exe'
+& $gxwPython -m pip install --require-hashes -r requirements-gxw-preview.txt
+& $gxwPython -m pip download --require-hashes --only-binary=:all: --dest C:\Temp\gxw-wheels -r requirements-gxw-preview.txt
+& $gxwPython -I -B tools/build_gxw_preview.py --source $PWD --output C:\Temp\gxw-build
+& $gxwPython -I -B tools/verify_gxw_preview.py --manifest C:\Temp\gxw-build\build-manifest.json --wheelhouse C:\Temp\gxw-wheels --output C:\Temp\gxw-verification
 ```
 
-Editable installs are not release-validation evidence. The build includes the
-root LICENSE, NOTICE, and dependency notices in each distribution. FX5/R source
-commit and tree identifiers are recorded in an artifact-only provenance resource,
-not in committed source. Zero values used when that resource is absent from a
-source checkout are not a verified distribution identity.
-`build-manifest.json` records actual tool versions, the source commit/tree, and
-distribution SHA-256 hashes.
+두 산출물과 공개 commit/tree의 신원은 `build-manifest.json`에 기록됩니다. 검증기는 새 가상환경에서 설치 경로/모듈 해시, 읽기 진입점, 합성 시험과 MCP stdio를 검사합니다. 편집 가능 설치나 소스 경로 주입은 배포 설치 검증 근거가 아닙니다. [사용법과 제한](docs/gxw-read-v1.md)을 확인하세요.
 
 ## Usage
 

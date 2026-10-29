@@ -38,31 +38,22 @@ Ladder입니다. 다른 CPU 조합이 명시된 경우에는 `UNSUPPORTED`, 기�
 다른 iQ-R CPU의 현재 지원이나 PLC 운전과 현장 적용 승인을 의미하지는 않습니다.
 현재 경계는 [호환성 표](docs/compatibility-matrix-ko.md)를 확인하세요.
 
-## 빌드와 설치
+## GXW 프리뷰 빌드와 설치
 
-검토 후 커밋한 깨끗한 독립 checkout에서 빌드합니다. 결과 디렉터리는
-checkout 밖의 새 경로여야 합니다. 저장소 루트에서 Git을 PATH로 실행할 수 있는
-상태로 명령을 실행하세요. 설치 검증에는 `PYTHONPATH`가 설정되지 않은 독립
-가상환경이 필요하며, 보고서 경로는 기존 파일과 겹치지 않아야 합니다.
-다음은 PowerShell 예시입니다.
+현재 `gxw-parser-toolkit 0.2.0a1`은 아래 개별 빌드와 독립 설치 검증을 사용합니다. 기존 `lab`의 GXW `0.1.0` 소비 pin과 다른 패키지 버전은 보존합니다. 새 GXW wheel과 이전 통합 환경을 함께 설치하거나 기존 `verify_install.py` 기본 profile로 검사하지 않습니다. FX5/R의 독립 설치 profile은 기존 계약을 유지합니다.
+
+커밋한 깨끗한 독립 checkout에서 Windows CPython 3.13으로 실행합니다. 출력 경로는 checkout 밖의 새 경로여야 합니다. 아래 의존성 다운로드에는 네트워크가 필요하고 실제 검증기는 준비된 wheelhouse만 사용합니다.
 
 ```powershell
-python -m venv C:\Temp\gx-build-env
-C:\Temp\gx-build-env\Scripts\python.exe -m pip install --require-hashes -r requirements-build.txt
-C:\Temp\gx-build-env\Scripts\python.exe tools/build_artifacts.py --output C:\Temp\gx-build-01
-$wheels = Get-ChildItem C:\Temp\gx-build-01\artifacts -Recurse -Filter *.whl
-C:\Temp\gx-build-env\Scripts\python.exe -m pip install $wheels.FullName
-C:\Temp\gx-build-env\Scripts\python.exe -m pip check
-$commit = git rev-parse HEAD
-$tree = git rev-parse 'HEAD^{tree}'
-C:\Temp\gx-build-env\Scripts\python.exe tools/verify_install.py --commit $commit --tree $tree --output C:\Temp\gx-install-report.json
+py -3.13 -m venv C:\Temp\gxw-build-env
+$gxwPython = 'C:\Temp\gxw-build-env\Scripts\python.exe'
+& $gxwPython -m pip install --require-hashes -r requirements-gxw-preview.txt
+& $gxwPython -m pip download --require-hashes --only-binary=:all: --dest C:\Temp\gxw-wheels -r requirements-gxw-preview.txt
+& $gxwPython -I -B tools/build_gxw_preview.py --source $PWD --output C:\Temp\gxw-build
+& $gxwPython -I -B tools/verify_gxw_preview.py --manifest C:\Temp\gxw-build\build-manifest.json --wheelhouse C:\Temp\gxw-wheels --output C:\Temp\gxw-verification
 ```
 
-편집 가능 설치는 배포 검증 근거로 사용하지 않습니다. 빌드 시 루트 LICENSE,
-NOTICE와 의존성 고지가 각 배포물에 들어갑니다. FX5/R의 source commit/tree는
-커밋한 소스가 아닌 배포물의 provenance resource에 기록합니다.
-원본 checkout에서 resource가 없을 때의 0 값은 확인된 배포 identity가 아닙니다.
-`build-manifest.json`은 실제 도구 버전, 소스 commit/tree와 배포물 SHA-256을 기록합니다.
+두 산출물과 공개 commit/tree의 신원은 `build-manifest.json`에 기록됩니다. 검증기는 새 가상환경에서 설치 경로/모듈 해시, 읽기 진입점, 합성 시험과 MCP stdio를 검사합니다. 편집 가능 설치나 소스 경로 주입은 배포 설치 검증 근거가 아닙니다. [사용법과 제한](docs/gxw-read-v1.md)을 확인하세요.
 
 ## 실행
 
