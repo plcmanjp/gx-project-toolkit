@@ -1,0 +1,20 @@
+{
+  "schema": "plcman.gxw.readonly-config/1",
+  "disclosure": "summary-only",
+  "alias_key": "0000000000000000000000000000000000000000000000000000000000000000",
+  "audit_root": "C:/gxw-read-demo/audit",
+  "projects": {
+    "demo-a": {
+      "path": "C:/gxw-read-demo/inputs/demo-a.gxw",
+      "root": "C:/gxw-read-demo/inputs",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "profile": "q06udv-simple-ladder-observed",
+      "authority": "authorized-synthetic"
+    }
+  },
+  "limits": {
+    "timeout_seconds": 10,
+    "memory_bytes": 268435456,
+    "page_size": 100
+  }
+}

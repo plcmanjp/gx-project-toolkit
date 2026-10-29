@@ -837,7 +837,11 @@ def device_comment_map(streams):
     '디바이스↔코멘트 dict(코멘트 채워진 쌍만 - IL 덤프 COMMENT.csv용).\n    인자 = load_all_substreams 결과 dict. (하위호환: 단일 스트림 bytes도 수용.)'
     if not isinstance(streams, dict):
         streams = {"0": streams}
+    if sum(_structured_comment_section(body) is not None for body in streams.values()) > 1:
+        raise ValueError('ambiguous counted comment sources')
     pairs, _ = device_comment_pairs(streams)
+    if len({device for device, _ in pairs}) != len(pairs):
+        raise ValueError('duplicate device comment address')
     return {d: c for d, c in pairs if c}
 
 

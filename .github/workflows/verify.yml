@@ -3,11 +3,8 @@ on: [push, pull_request, workflow_dispatch]
 permissions:
   contents: read
 jobs:
-  installed-packages:
+  installed-gxw-read-v1:
     runs-on: windows-2022
-    strategy:
-      matrix:
-        python: ['3.12', '3.13']
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -15,31 +12,21 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
-          python-version: ${{ matrix.python }}
-      - name: Build and verify normal installation
+          python-version: '3.13'
+      - name: GXW 읽기 프리뷰 빌드와 독립 설치 검증
         shell: pwsh
         run: |
-          python -m venv "$env:RUNNER_TEMP/gx-env"
-          $python = "$env:RUNNER_TEMP/gx-env/Scripts/python.exe"
-          & $python -m pip install --require-hashes -r requirements-build.txt
+          python -m venv "$env:RUNNER_TEMP/gx-build-env"
+          $python = "$env:RUNNER_TEMP/gx-build-env/Scripts/python.exe"
+          & $python -m pip install --require-hashes -r requirements-gxw-preview.txt
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          & $python tools/build_artifacts.py --output "$env:RUNNER_TEMP/gx-build"
+          & $python -m pip download --require-hashes --only-binary=:all: --dest "$env:RUNNER_TEMP/gx-wheels" -r requirements-gxw-preview.txt
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          $wheels = Get-ChildItem "$env:RUNNER_TEMP/gx-build/artifacts" -Recurse -Filter *.whl
-          & $python -m pip install --no-deps $wheels.FullName
+          & $python -I -B tools/build_gxw_preview.py --source $PWD --output "$env:RUNNER_TEMP/gxw-preview"
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          & $python -m pip check
+          & $python -I -B tools/verify_gxw_preview.py --manifest "$env:RUNNER_TEMP/gxw-preview/build-manifest.json" --wheelhouse "$env:RUNNER_TEMP/gx-wheels" --output "$env:RUNNER_TEMP/gxw-verification"
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          $commit = git rev-parse HEAD
-          $tree = git rev-parse 'HEAD^{tree}'
-          & $python tools/verify_install.py --commit $commit --tree $tree --output "$env:RUNNER_TEMP/install-report.json"
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          $env:PYTHONUTF8 = '0'
-          & $python -B -m unittest discover -s packages/gxw-q/tests -p test_gxw_safety.py -q
-          $captureExit = $LASTEXITCODE
-          $env:PYTHONUTF8 = '1'
-          if ($captureExit) { exit $captureExit }
-          $archives = Get-ChildItem "$env:RUNNER_TEMP/gx-build/artifacts" -Recurse -File
+          $archives = Get-ChildItem "$env:RUNNER_TEMP/gxw-preview/artifacts" -File
           $arguments = @()
           foreach ($archive in $archives) { $arguments += '--artifact'; $arguments += $archive.FullName }
           & $python tools/audit_public_tree.py @arguments

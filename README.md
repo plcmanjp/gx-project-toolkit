@@ -1,5 +1,7 @@
 # GX RE Toolkit
 
+GXW 읽기 전용 프리뷰 `gxw-parser-toolkit 0.2.0a1`의 [설치와 사용법](docs/gxw-read-v1.md), [변경 사항](docs/releases/gxw-0.2.0a1.md)을 확인하세요. 이 프리뷰의 wheel/sdist에는 읽기 모듈과 읽기 CLI/MCP만 포함됩니다. 아래 기존 작성 기능 설명은 이전 `0.1.0`에 해당하며 이번 프리뷰의 지원 범위가 아닙니다. 새 가상환경에서 개별 설치하고 기존 통합 환경이나 소비 pin을 자동 갱신하지 마세요.
+
 [English](README.md) | [한국어](README-ko.md)
 
 An independent research toolkit for offline analysis of the explicitly supported
@@ -14,7 +16,7 @@ The source is published for offline research, not approved for field deployment.
 | --- | --- | --- |
 | gx3-fx5-parser-toolkit | 0.4.0 | GX3 FX5 structure and Neutral IR analysis |
 | gx3-r-parser-toolkit | 0.2.0 | Read-only analysis of MELSEC iQ-R family GX Works3 projects |
-| gxw-parser-toolkit | 0.1.0 | GXW analysis, Reference IR, and candidate file writing |
+| gxw-parser-toolkit | 0.2.0a1 | Q06UDV 제한 읽기와 CLI/MCP 프리뷰 |
 | gx-re-lab | 0.1.0 | Bounded comparison, census, planning, and reduction research tools |
 
 Python 3.12 or later is required. Full writing functionality uses Windows and
@@ -219,7 +221,7 @@ reviewed commit required by the consumer before building. Do not substitute the
 latest branch tip for an approved artifact pin.
 
 ```powershell
-git clone https://github.com/plcmanjp/gx-re-toolkit.git C:\Work\gx-re-toolkit
+git clone https://github.com/plcmanjp/gx-project-toolkit.git C:\Work\gx-re-toolkit
 git -C C:\Work\gx-re-toolkit rev-parse --show-toplevel
 git -C C:\Work\gx-re-toolkit remote get-url origin
 git -C C:\Work\gx-re-toolkit switch --detach <reviewed-commit>
