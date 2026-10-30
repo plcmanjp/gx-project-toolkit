@@ -281,10 +281,16 @@ def verify(manifest, output, wheelhouse):
         json.dump(expected, stream, sort_keys=True)
     environment = {k: v for k, v in os.environ.items() if not k.upper().startswith(("PYTHON", "PIP_"))}
     environment.update(TEMP=str(temporary), TMP=str(temporary), TMPDIR=str(temporary), PYTHONDONTWRITEBYTECODE="1",
-                       PYTHONNOUSERSITE="1", PIP_NO_INDEX="1", PIP_DISABLE_PIP_VERSION_CHECK="1", PIP_NO_CACHE_DIR="1")
+                       PYTHONNOUSERSITE="1", PYTHONUTF8="1", PYTHONIOENCODING="utf-8",
+                       PIP_NO_INDEX="1", PIP_DISABLE_PIP_VERSION_CHECK="1", PIP_NO_CACHE_DIR="1")
     def command(label, args, expected_code=0):
         with (output / (label + ".stdout")).open("xb") as stdout, (output / (label + ".stderr")).open("xb") as stderr:
             completed = subprocess.run(args, cwd=runtime, env=environment, stdout=stdout, stderr=stderr, timeout=300)
+        if completed.returncode != expected_code:
+            with (output / "failure.json").open("x", encoding="utf-8", newline="\n") as stream:
+                json.dump({"status": "FAILED", "stage": label, "exit": completed.returncode,
+                           "expected_exit": expected_code}, stream, sort_keys=True)
+                stream.write("\n")
         require(completed.returncode == expected_code, "검증 단계가 실패했습니다. 출력 경로의 기록을 확인하십시오: " + label)
         return (output / (label + ".stdout")).read_bytes()
     environment_root = output / "venv"

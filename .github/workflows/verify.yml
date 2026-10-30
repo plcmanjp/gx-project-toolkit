@@ -22,15 +22,26 @@ jobs:
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           & $python -m pip download --require-hashes --only-binary=:all: --dest "$env:RUNNER_TEMP/gx-wheels" -r requirements-gxw-preview.txt
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          & $python -I -B tools/build_gxw_preview.py --source $PWD --output "$env:RUNNER_TEMP/gxw-preview"
+          & $python -X utf8 -I -B tools/build_gxw_preview.py --source $PWD --output "$env:RUNNER_TEMP/gxw-preview"
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          & $python -I -B tools/verify_gxw_preview.py --manifest "$env:RUNNER_TEMP/gxw-preview/build-manifest.json" --wheelhouse "$env:RUNNER_TEMP/gx-wheels" --output "$env:RUNNER_TEMP/gxw-verification"
+          & $python -X utf8 -I -B tools/verify_gxw_preview.py --manifest "$env:RUNNER_TEMP/gxw-preview/build-manifest.json" --wheelhouse "$env:RUNNER_TEMP/gx-wheels" --output "$env:RUNNER_TEMP/gxw-verification"
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           $archives = Get-ChildItem "$env:RUNNER_TEMP/gxw-preview/artifacts" -File
           $arguments = @()
           foreach ($archive in $archives) { $arguments += '--artifact'; $arguments += $archive.FullName }
           & $python tools/audit_public_tree.py @arguments
           exit $LASTEXITCODE
+      - name: 합성 검증 실패 기록
+        if: failure()
+        shell: pwsh
+        run: |
+          $root = "$env:RUNNER_TEMP/gxw-verification"
+          if (Test-Path -LiteralPath $root) {
+            Get-ChildItem -LiteralPath $root -File | Where-Object { $_.Extension -in '.stdout', '.stderr' -or $_.Name -eq 'failure.json' } | ForEach-Object {
+              Write-Output $_.Name
+              Get-Content -LiteralPath $_.FullName -Encoding utf8 -Tail 30
+            }
+          }
   installed-linux-read-only:
     runs-on: ubuntu-24.04
     strategy:

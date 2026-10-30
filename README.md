@@ -47,6 +47,7 @@ PLC operation or field deployment. See the
 커밋한 깨끗한 독립 checkout에서 Windows CPython 3.13으로 실행합니다. 출력 경로는 checkout 밖의 새 경로여야 합니다. 아래 의존성 다운로드에는 네트워크가 필요하고 실제 검증기는 준비된 wheelhouse만 사용합니다.
 
 ```powershell
+$env:PYTHONUTF8 = '1'
 py -3.13 -m venv C:\Temp\gxw-build-env
 $gxwPython = 'C:\Temp\gxw-build-env\Scripts\python.exe'
 & $gxwPython -m pip install --require-hashes -r requirements-gxw-preview.txt

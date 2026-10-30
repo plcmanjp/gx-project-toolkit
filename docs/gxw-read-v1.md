@@ -11,6 +11,7 @@
 아래 PowerShell 예제는 제공받은 wheel을 `wheelhouse`에 둔 경우다. 예제 이름의 파일이 실제로 있어야 한다.
 
 ```powershell
+$env:PYTHONUTF8 = '1'
 py -3.12 -m venv .venv-gxw-read-v1
 $gxwPython = (Resolve-Path '.\.venv-gxw-read-v1\Scripts\python.exe').Path
 & $gxwPython -m pip install '.\wheelhouse\gxw_parser_toolkit-0.2.0a1-py3-none-any.whl[mcp]'
