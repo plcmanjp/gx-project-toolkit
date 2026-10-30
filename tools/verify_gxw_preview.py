@@ -196,9 +196,11 @@ print(json.dumps({"status": "PASS", "distribution": dist.metadata["Name"], "vers
 '''
 
 TEST_RUNNER = r'''
-import importlib.util, json, sys, unittest
+import importlib.util, json, os, sys, unittest
 from pathlib import Path
 root = Path(sys.argv[1])
+# Keep this installation profile separate from other distribution test runs.
+os.environ["GXW_READONLY_INSTALLED_TESTS"] = "1"
 suite = unittest.TestSuite()
 for name in ("test_read_v1", "test_readonly_package"):
     spec = importlib.util.spec_from_file_location(name, root / (name + ".py"))

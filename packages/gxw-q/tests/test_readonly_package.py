@@ -6,6 +6,7 @@ import importlib
 import importlib.metadata as metadata
 import importlib.util
 import json
+import os
 from pathlib import Path
 import sys
 import unittest
@@ -45,6 +46,8 @@ def observation(rows=None):
             "unknowns": ["CPU_IDENTITY_NOT_AUTHENTICATED"]}
 
 
+@unittest.skipUnless(os.environ.get("GXW_READONLY_INSTALLED_TESTS") == "1",
+                     "읽기 프리뷰의 독립 설치 검증에서만 실행합니다.")
 class InstalledPackageTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
