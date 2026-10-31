@@ -1,6 +1,8 @@
 # GX RE Toolkit
 
-GXW 읽기 전용 프리뷰 `gxw-parser-toolkit 0.2.0a1`의 [설치와 사용법](docs/gxw-read-v1.md), [변경 사항](docs/releases/gxw-0.2.0a1.md)을 확인하세요. 이 프리뷰의 wheel/sdist에는 읽기 모듈과 읽기 CLI/MCP만 포함됩니다. 아래 기존 작성 기능 설명은 이전 `0.1.0`에 해당하며 이번 프리뷰의 지원 범위가 아닙니다. 새 가상환경에서 개별 설치하고 기존 통합 환경이나 소비 pin을 자동 갱신하지 마세요.
+GXW 읽기 전용 프리뷰 `gxw-parser-toolkit 0.2.0a2`의 [설치와 사용법](docs/gxw-read-v1.md), [변경 사항](docs/releases/gxw-0.2.0a2.md)을 확인하세요. 이 프리뷰의 wheel/sdist에는 읽기 모듈과 읽기 CLI/MCP만 포함됩니다. 아래 기존 작성 기능 설명은 이전 `0.1.0`에 해당하며 이번 프리뷰의 지원 범위가 아닙니다. 새 가상환경에서 개별 설치하고 기존 통합 환경이나 소비 pin을 자동 갱신하지 마세요.
+
+`0.2.0a2`는 등록 서비스와 작업 프로세스의 실행 조건 및 메모리 제한 적용 여부를 확인합니다. 작업 프로세스 정리에 실패한 서비스는 후속 요청을 거부합니다. 읽기 형식과 지원 범위는 유지합니다.
 
 [English](README.md) | [한국어](README-ko.md)
 
@@ -16,7 +18,7 @@ The source is published for offline research, not approved for field deployment.
 | --- | --- | --- |
 | gx3-fx5-parser-toolkit | 0.4.0 | GX3 FX5 structure and Neutral IR analysis |
 | gx3-r-parser-toolkit | 0.2.0 | Read-only analysis of MELSEC iQ-R family GX Works3 projects |
-| gxw-parser-toolkit | 0.2.0a1 | Q06UDV 제한 읽기와 CLI/MCP 프리뷰 |
+| gxw-parser-toolkit | 0.2.0a2 | Q06UDV 제한 읽기와 CLI/MCP 프리뷰 |
 | gx-re-lab | 0.1.0 | Bounded comparison, census, planning, and reduction research tools |
 
 Python 3.12 or later is required. Full writing functionality uses Windows and
@@ -42,7 +44,7 @@ PLC operation or field deployment. See the
 
 ## GXW 프리뷰 빌드와 설치
 
-현재 `gxw-parser-toolkit 0.2.0a1`은 아래 개별 빌드와 독립 설치 검증을 사용합니다. 기존 `lab`의 GXW `0.1.0` 소비 pin과 다른 패키지 버전은 보존합니다. 새 GXW wheel과 이전 통합 환경을 함께 설치하거나 기존 `verify_install.py` 기본 profile로 검사하지 않습니다. FX5/R의 독립 설치 profile은 기존 계약을 유지합니다.
+현재 `gxw-parser-toolkit 0.2.0a2`는 아래 개별 빌드와 독립 설치 검증을 사용합니다. 이전 GXW 통합 환경과 다른 패키지 버전은 개별적으로 유지합니다. 다른 GXW 배포물과 함께 설치하거나 기존 `verify_install.py` 기본 profile로 검사하지 않습니다. 다른 패키지의 독립 설치 profile은 기존 계약을 유지합니다.
 
 커밋한 깨끗한 독립 checkout에서 Windows CPython 3.13으로 실행합니다. 출력 경로는 checkout 밖의 새 경로여야 합니다. 아래 의존성 다운로드에는 네트워크가 필요하고 실제 검증기는 준비된 wheelhouse만 사용합니다.
 
@@ -190,9 +192,9 @@ synthetic tests into a claim of field acceptance.
 
 - [Validation methodology](docs/validation-methodology.md)
 - [Safety boundaries](docs/safety-boundaries.md)
-- [Reverse engineering and rights policy](docs/reverse-engineering-policy.md)
+- [Use and redistribution policy](docs/usage-rights-policy.md)
 - [Dependency notices](THIRD_PARTY_NOTICES.md)
-- [External research boundaries](THIRD_PARTY_RESEARCH.md)
+- [Third-party code inclusion policy](THIRD_PARTY_CODE_POLICY.md)
 - [Security reporting](SECURITY.md)
 - [Contributing](CONTRIBUTING.md)
 

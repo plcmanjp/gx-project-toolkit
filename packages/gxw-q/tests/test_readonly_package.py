@@ -54,8 +54,8 @@ class InstalledPackageTests(unittest.TestCase):
         if sys.prefix == sys.base_prefix:
             raise AssertionError("새 가상환경에 wheel을 설치한 뒤 실행하십시오.")
         cls.dist = metadata.distribution("gxw-parser-toolkit")
-        if cls.dist.version != "0.2.0a1":
-            raise AssertionError("설치 버전이 0.2.0a1이 아닙니다.")
+        if cls.dist.version != "0.2.0a2":
+            raise AssertionError("설치 버전이 0.2.0a2이 아닙니다.")
 
     def test_distribution_has_exact_readonly_modules_and_entrypoints(self):
         entries = [entry for entry in self.dist.entry_points if entry.group == "console_scripts"]

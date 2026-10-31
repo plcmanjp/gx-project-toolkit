@@ -16,7 +16,7 @@ import tarfile
 import zipfile
 
 NAME = "gxw-parser-toolkit"
-VERSION = "0.2.0a1"
+VERSION = "0.2.0a2"
 MODULES = (
     "gxw_ladder_reader", "gxw_pou_devmap", "gxw_reference_ir", "gxw_bounded_ole",
     "gxw_bounded_xml", "gxw_parameter_reader", "gxw_project_analysis", "gxw_read_v1",
@@ -27,7 +27,7 @@ SCRIPTS = {
     "gxw-reference-ir": "gxw_reference_ir:main", "gxw-read-service": "gxw_analysis_service:main",
     "gxw-read-mcp": "gxw_analysis_mcp:main",
 }
-TESTS = ("test_read_v1.py", "test_readonly_package.py")
+TESTS = ("test_read_v1.py", "test_readonly_package.py", "test_service_resources.py")
 SCHEMA = "schemas/device-references-v1.schema.json"
 
 
@@ -153,7 +153,7 @@ assert sys.prefix != sys.base_prefix, "새 가상환경이 필요합니다."
 assert not __import__("site").ENABLE_USER_SITE, "사용자 패키지 경로가 활성화됐습니다."
 prefix = Path(sys.prefix).resolve()
 dist = md.distribution("gxw-parser-toolkit")
-assert dist.metadata["Name"] == "gxw-parser-toolkit" and dist.version == "0.2.0a1", "설치 이름 또는 버전이 일치하지 않습니다."
+assert dist.metadata["Name"] == "gxw-parser-toolkit" and dist.version == "0.2.0a2", "설치 이름 또는 버전이 일치하지 않습니다."
 url = json.loads(dist.read_text("direct_url.json") or "{}")
 assert "dir_info" not in url and "archive_info" in url, "wheel 설치가 필요합니다."
 assert url["archive_info"].get("hashes", {}).get("sha256") == expected["wheel_sha256"], "설치 wheel 식별자가 다릅니다."
@@ -202,14 +202,14 @@ root = Path(sys.argv[1])
 # Keep this installation profile separate from other distribution test runs.
 os.environ["GXW_READONLY_INSTALLED_TESTS"] = "1"
 suite = unittest.TestSuite()
-for name in ("test_read_v1", "test_readonly_package"):
+for name in ("test_read_v1", "test_readonly_package", "test_service_resources"):
     spec = importlib.util.spec_from_file_location(name, root / (name + ".py"))
     module = importlib.util.module_from_spec(spec)
     sys.modules[name] = module
     spec.loader.exec_module(module)
     suite.addTests(unittest.defaultTestLoader.loadTestsFromModule(module))
 result = unittest.TextTestRunner(verbosity=2).run(suite)
-assert result.testsRun > 0 and not result.skipped, "실행되지 않은 합성 시험이 있습니다."
+assert result.testsRun == 41 and not result.skipped, "합성 시험 41개를 빠짐없이 실행해야 합니다."
 assert result.wasSuccessful(), "합성 시험이 실패했습니다."
 print(json.dumps({"status": "PASS", "tests": result.testsRun, "skipped": len(result.skipped)}))
 '''

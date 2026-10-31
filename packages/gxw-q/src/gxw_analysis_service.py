@@ -15,6 +15,7 @@ import os
 from pathlib import Path
 import re
 import sys
+import sysconfig
 import time
 import uuid
 
@@ -27,6 +28,7 @@ OPERATIONS = ("inventory", "inspect", "query", "compare")
 ID = re.compile(r"^[a-z][a-z0-9_-]{0,47}$")
 HEX = re.compile(r"[0-9a-f]{64}\Z")
 RESPONSE_LIMIT = 64 * 1024
+CLEANUP_TIMEOUT = 1.0
 DETAIL_FIELDS = frozenset({"pou_names", "device_comments", "text_records", "references"})
 DISCLOSURES = frozenset({"summary-only", "authorized-detail"})
 REASON = re.compile(r"[A-Z][A-Z0-9_]{0,95}\Z")
@@ -56,6 +58,44 @@ def alias(key, value):
 def directory_identity(path):
     engine._path_chain(path)
     return [(str(p), p.stat().st_dev, p.stat().st_ino) for p in (path, *path.parents)]
+
+
+def _worker_launch(fixedworker, optimize=False):
+    """Launch the actual CPython PID; defer the trusted runtime site until gate admission."""
+    try:
+        raw_base = getattr(sys, "_base_executable", None)
+        if type(raw_base) is not str or not Path(raw_base).is_absolute():
+            raise ValueError
+        base = Path(raw_base).resolve(strict=True)
+        base_root, prefix = Path(sys.base_prefix).resolve(strict=True), Path(sys.prefix).resolve(strict=True)
+        if (not base.is_file() or base.name.lower() != "python.exe" or base.parent != base_root or
+                (prefix != base_root and base == Path(sys.executable).resolve(strict=True))):
+            raise ValueError
+        raw_site = sysconfig.get_path("purelib")
+        if type(raw_site) is not str or not Path(raw_site).is_absolute():
+            raise ValueError
+        runtime_site = Path(raw_site).resolve(strict=True)
+        if not runtime_site.is_dir() or runtime_site != (prefix / "Lib/site-packages").resolve(strict=True):
+            raise ValueError
+        if type(fixedworker) is not type(Path()) or not fixedworker.is_absolute():
+            raise ValueError
+        worker = fixedworker.resolve(strict=True)
+        source = Path(__file__).resolve().parent
+        if (worker.parent != source or not worker.is_file() or worker.name not in
+                {"gxw_analysis_worker.py", "gxw_pou_private_worker.py"}):
+            raise ValueError
+        if type(optimize) not in (bool, int) or optimize not in (0, 1, 2):
+            raise ValueError
+        command = [str(base), "-I", "-S", "-B"]
+        if optimize:
+            command.append("-O" if optimize == 1 else "-OO")
+        command.append(str(worker))
+        environment = {key: value for key, value in os.environ.items()
+                       if key.upper() not in {"GXW_TOOLKIT_WORKER_SITE", "__PYVENV_LAUNCHER__"}}
+        environment["GXW_TOOLKIT_WORKER_SITE"] = str(runtime_site)
+        return command, environment
+    except Exception:
+        raise ServiceError("RESOURCE_ISOLATION_UNAVAILABLE") from None
 
 
 def detail_fields(disclosure, project):
@@ -404,6 +444,8 @@ def project_result(request):
 class ReadService:
     def __init__(self, registry):
         self.registry, self.active = registry, False
+        self._poisoned = False
+        self._owned_proc = self._owned_job = self._owned_waiter = None
         # The operator's separate audit root is a trusted local output. No
         # overwrite, mkdir or fallback next to a source project is permitted.
         self.audit = None
@@ -437,11 +479,49 @@ class ReadService:
             reject("AUDIT_FAILED")
 
     def close(self):
+        if self._poisoned:
+            reject("CLEANUP_UNCONFIRMED")
         if not self.audit.closed:
             try:
                 self.audit.close()
             except Exception:
                 raise ServiceError("AUDIT_FAILED") from None
+
+    async def _cleanup_owned(self):
+        """Confirm Job close and bounded wait before releasing owned resources."""
+        proc, job = self._owned_proc, self._owned_job
+        job_closed = job is None
+        if job is not None:
+            try:
+                job.close()
+                job_closed = True
+            except Exception:
+                pass
+        # EOF can terminate a gated child even if killing it is denied.
+        try:
+            if proc.stdin is not None:
+                proc.stdin.close()
+        except Exception:
+            pass
+        try:
+            if proc.returncode is None:
+                proc.kill()
+        except Exception:
+            pass
+        try:
+            waiter = asyncio.create_task(proc.wait())
+            self._owned_waiter = waiter
+            done, _ = await asyncio.wait({waiter}, timeout=CLEANUP_TIMEOUT)
+            if not done:
+                waiter.cancel()
+                return False
+            returned = waiter.result()
+            return (job_closed and type(returned) is int and type(proc.returncode) is int and
+                    returned == proc.returncode)
+        except (Exception, asyncio.CancelledError):
+            if self._owned_waiter is not None and not self._owned_waiter.done():
+                self._owned_waiter.cancel()
+            return False
 
     def reject_call(self, reason="INVALID_ARGUMENTS"):
         self.record("INVALID", "REJECTED", request_id=uuid.uuid4().hex, reason=reason)
@@ -452,6 +532,8 @@ class ReadService:
         proc, job = None, None
         owns_slot = False
         try:
+            if self._poisoned:
+                reject("CLEANUP_UNCONFIRMED")
             if (operation not in OPERATIONS or type(project_id) is not str
                     or project_id not in self.registry.projects):
                 reject("UNKNOWN_OPERATION_OR_PROJECT")
@@ -489,13 +571,16 @@ class ReadService:
                        "disclosure": self.registry.disclosure, "project_ids": selected}
             if right_id is not None:
                 request["projects"].append(self.registry.projects[right_id])
+            command, worker_environment = _worker_launch(Path(__file__).with_name("gxw_analysis_worker.py"))
             async with asyncio.timeout(self.registry.timeout):
                 proc = await asyncio.create_subprocess_exec(
-                    sys.executable, "-I", "-B", str(Path(__file__).with_name("gxw_analysis_worker.py")),
+                    *command, env=worker_environment,
                     stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE,
                     stderr=asyncio.subprocess.DEVNULL, limit=RESPONSE_LIMIT+1,
                     creationflags=0x08000000 if sys.platform == "win32" else 0)
+                self._owned_proc = proc
                 job = WorkerJob(proc.pid, self.registry.memory_bytes)
+                self._owned_job = job
                 proc.stdin.write(engine.canonical_json(request).encode("ascii") + b"\n")
                 await proc.stdin.drain()
                 proc.stdin.close()
@@ -529,22 +614,10 @@ class ReadService:
             raise ServiceError("WORKER_FAILED") from None
         finally:
             # Close only our child job. Drain/reap before releasing concurrency.
-            async def reap():
-                try:
-                    if job is not None:
-                        job.close()
-                finally:
-                    if proc is not None:
-                        if proc.returncode is None:
-                            try:
-                                proc.kill()
-                            except ProcessLookupError:
-                                pass
-                        await proc.wait()
-            interrupted = False
+            interrupted, cleanup_confirmed = False, proc is None
             try:
                 if proc is not None:
-                    cleanup = asyncio.create_task(reap())
+                    cleanup = asyncio.create_task(self._cleanup_owned())
                     # A raw Task.cancel can interrupt an outer shield repeatedly.
                     # Keep the cleanup task alive and wait until the owned child
                     # is reaped before propagating the cancellation.
@@ -553,19 +626,32 @@ class ReadService:
                             try:
                                 import anyio
                             except ImportError:
-                                await asyncio.shield(cleanup)
+                                cleanup_confirmed = await asyncio.shield(cleanup)
                             else:
                                 with anyio.CancelScope(shield=True):
-                                    await asyncio.shield(cleanup)
+                                    cleanup_confirmed = await asyncio.shield(cleanup)
                             break
                         except asyncio.CancelledError:
                             interrupted, status = True, "CANCELLED"
                             reason = "CANCELLED"
+                        except Exception:
+                            cleanup_confirmed = False
+                            break
+                    if not cleanup_confirmed:
+                        self._poisoned = True
+                        status, reason = "REJECTED", "CLEANUP_UNCONFIRMED"
             finally:
-                if owns_slot:
+                if owns_slot and cleanup_confirmed and not self._poisoned:
+                    self._owned_proc = self._owned_job = self._owned_waiter = None
                     self.active = False
-                self.record(operation if operation in OPERATIONS else "INVALID", status,
-                            request_id=request_id, reason=reason, sources=sources, grants=grants)
+                try:
+                    self.record(operation if operation in OPERATIONS else "INVALID", status,
+                                request_id=request_id, reason=reason, sources=sources, grants=grants)
+                except Exception:
+                    if not self._poisoned:
+                        raise
+            if self._poisoned:
+                raise ServiceError("CLEANUP_UNCONFIRMED") from None
             if interrupted:
                 raise asyncio.CancelledError
 

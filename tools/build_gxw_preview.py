@@ -17,7 +17,7 @@ import tomllib
 import zipfile
 
 NAME = "gxw-parser-toolkit"
-VERSION = "0.2.0a1"
+VERSION = "0.2.0a2"
 PACKAGE = "packages/gxw-q"
 MODULES = (
     "gxw_ladder_reader", "gxw_pou_devmap", "gxw_reference_ir", "gxw_bounded_ole",
@@ -29,7 +29,7 @@ SCRIPTS = {
     "gxw-reference-ir": "gxw_reference_ir:main", "gxw-read-service": "gxw_analysis_service:main",
     "gxw-read-mcp": "gxw_analysis_mcp:main",
 }
-TESTS = ("test_read_v1.py", "test_readonly_package.py")
+TESTS = ("test_read_v1.py", "test_readonly_package.py", "test_service_resources.py")
 LICENSES = ("LICENSE", "NOTICE", "THIRD_PARTY_NOTICES.md")
 SCHEMA = "schemas/device-references-v1.schema.json"
 FORMAT = "gxw-parser-toolkit.preview-build/1"

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gxw-parser-toolkit"
-version = "0.2.0a1"
+version = "0.2.0a2"
 description = "Offline read-only project observations and device reference snapshots"
 requires-python = ">=3.12"
 license = "Apache-2.0"
