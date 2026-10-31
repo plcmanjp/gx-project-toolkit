@@ -6,7 +6,7 @@
 |---|---|---|
 | gx3-fx5-parser-toolkit 0.4.1 | Validated FX5-family GX3 carriers and Neutral IR 1.0.0 | Claims of support for all FX instructions or languages |
 | gx3-r-parser-toolkit 0.2.0 | Current explicit supported profile: R04CPU Ladder with `R04/4097` | Current support claims for other iQ-R CPUs or unvalidated project formats |
-| gxw-parser-toolkit 0.2.0a1 | Q06UDV Simple Ladder의 제한 읽기, 직접 참조, CLI/MCP | 전체 POU 해독, 일반 CPU/주소 적법성, 편집과 현장 적용 수락 |
+| gxw-parser-toolkit 0.2.0a2 | Limited Q06UDV Simple Ladder reading, direct references and CLI/MCP | Complete POU decoding, general CPU/address legality, editing and field acceptance |
 | gx-re-lab 0.1.1 | Research queries, comparison, census, and planning for fixed inputs | Official lifecycle collection and product acceptance |
 
 The R toolkit's project scope is read-only analysis across the MELSEC iQ-R
@@ -15,7 +15,7 @@ identified above. Its detector reports other explicit Unit/UnitId pairs as
 `UNSUPPORTED`, and missing or ambiguous identity evidence as `AMBIGUOUS`.
 The current profile identifier remains `mitsubishi.gx3.r04cpu.ladder`.
 Broader iQ-R coverage is a development direction, not a current compatibility
-guarantee. See [project direction](../README.md#project-direction).
+guarantee. See [supported formats](../README.md#supported-formats).
 
 R object reading projects observed device-comment identities/text and local-label
 names/Comment into the existing IR. These remain PARTIAL; carrier ownership,

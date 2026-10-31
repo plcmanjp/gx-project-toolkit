@@ -8,7 +8,7 @@
 |---|---|---|
 | gx3-fx5-parser-toolkit 0.4.1 | 검증된 FX5-family GX3 carrier와 Neutral IR 1.0.0 | 모든 FX 명령이나 언어 지원 주장 |
 | gx3-r-parser-toolkit 0.2.0 | 현재 명시적 지원 프로필: `R04/4097`의 R04CPU Ladder | 다른 iQ-R CPU 또는 미검증 프로젝트 형식의 현재 지원 주장 |
-| gxw-parser-toolkit 0.2.0a1 | Q06UDV Simple Ladder의 제한 읽기, 직접 참조, CLI/MCP | 전체 POU 해독, 일반 CPU/주소 적법성, 편집과 현장 적용 수락 |
+| gxw-parser-toolkit 0.2.0a2 | Q06UDV Simple Ladder의 제한 읽기, 직접 참조, CLI/MCP | 전체 POU 해독, 일반 CPU/주소 적법성, 편집과 현장 적용 수락 |
 | gx-re-lab 0.1.1 | 고정 입력의 연구 조회, 비교, census, 계획 | 공식 lifecycle 수집과 제품 수락 |
 
 R 도구의 프로젝트 대상은 MELSEC iQ-R 계열 전반의 읽기 전용 분석이며,
@@ -16,7 +16,7 @@ R 도구의 프로젝트 대상은 MELSEC iQ-R 계열 전반의 읽기 전용 �
 Unit/UnitId 조합이 명시되면 `UNSUPPORTED`, 기종 식별 근거가 없거나 모호하면
 `AMBIGUOUS`로 판정합니다. 현재 프로필 식별자는
 `mitsubishi.gx3.r04cpu.ladder`로 유지됩니다. iQ-R 전반으로의 확대는 개발 방향이며
-현재 호환성 보장이 아닙니다. [프로젝트 방향](../README-ko.md#프로젝트-방향)을
+현재 호환성 보장이 아닙니다. [지원 형식](../README-ko.md#지원-형식)을
 참고하세요.
 
 R 객체 읽기는 관측된 디바이스 코멘트의 식별자/문자열과 local label의 이름/Comment를
